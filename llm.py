@@ -20,6 +20,7 @@ def pergunta(input):
 
 # função para colocar o prompt
 def conversa(tema, linhas):
+  # define a persona da ia, seria como um "fine-tuning" básico
   rule = "Responda e insira uma pergunta no final. Responda apenas em português e com caracteres do utf-8"
   resposta = pergunta(f"{rule}. Inicie uma conversa sobre {tema}.")
 
