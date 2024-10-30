@@ -45,6 +45,7 @@ def analyze():
         completion = client.chat.completions.create(
             model="meta-llama/llama-3.2-3b-instruct:free",
             messages=[
+                # personalização da ia, mexer depois
                 {"role": "system", "content": "Você é uma assistente geral"},
                 {"role": "user", "content": user_content},
             ],
