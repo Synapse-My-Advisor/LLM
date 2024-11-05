@@ -73,9 +73,8 @@ def analyze():
         completion = client.chat.completions.create(
             model="meta-llama/llama-3.2-3b-instruct:free",
             messages=[
-                {"role": "system", "content": "Analise esse trabalho de graduação e retorne dicas e insigths para aperfeiçoar, além de fazer pequenas correções se necessário."},
+                {"role": "system", "content": "Você é uma assistente geral"},
                 {"role": "user", "content": descricao},
-      
             ],
         )
 
