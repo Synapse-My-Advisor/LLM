@@ -66,7 +66,7 @@ def analyze():
         db_connection.close()
     
     except mysql.connector.Error as err:
-        return jsonify({'Falhou com Sucesso'})
+        return jsonify({"message": "Falhou com Sucesso"})
 
     try:
         
