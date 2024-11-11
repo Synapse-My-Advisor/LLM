@@ -3,23 +3,18 @@ from flask import Flask, request, jsonify
 from functools import wraps
 from openai import OpenAI
 from dotenv import load_dotenv
-import mysql.connector
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 load_dotenv()
 
 app = Flask(__name__)
 
-def get_db_connection():
-    return mysql.connector.connect(
-
-        host=os.getenv("MYSQL_HOST"),
-        user=os.getenv("MYSQL_USER"),
-        password=os.getenv("MYSQL_PASSWORD"),
-        database=os.getenv("MYSQL_DATABASE")
-    )
+# Configuração do SQLAlchemy para conexão com MySQL
+DATABASE_URL = f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}/{os.getenv('MYSQL_DATABASE')}"
+engine = create_engine(DATABASE_URL)
 
 def require_token_auth(func):
-    
     @wraps(func)
     def check_token(*args, **kwargs):
         auth_header = request.headers.get("Authorization")
@@ -45,7 +40,6 @@ client = OpenAI(
 @app.route('/home', methods=['POST'])
 # @require_token_auth
 def analyze():
-    
     data = request.json
     user_content = data.get("content")
     user_id = data.get("user_id")   
@@ -55,21 +49,20 @@ def analyze():
         return jsonify({"error": "Content is required"}), 400
 
     try:
-        db_connection = get_db_connection()
-        cursor = db_connection.cursor(dictionary=True)
-        query = f"SELECT description FROM tg where {tg_id} = %s"
-        cursor.execute(query, (tg_id,))    
-        result = cursor.fetchone()
-        descricao = result["description"]
-        
-        cursor.close()
-        db_connection.close()
-    
-    except mysql.connector.Error as err:
-        return jsonify({'Falhou com Sucesso'})
+        # Query usando SQLAlchemy, habilitando o modo de mapeamento
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT description FROM tg WHERE id = :tg_id"), {"tg_id": tg_id})
+            row = result.mappings().fetchone()  # Usa o modo de mapeamento para acessar por nome de coluna
+            descricao = row["description"] if row else None
+            
+            if descricao is None:
+                return jsonify({"error": "Description not found"}), 404
+
+    except SQLAlchemyError as err:
+        return jsonify({'error': 'Database error', 'details': str(err)}), 500
 
     try:
-        
+        # Requisição para o OpenAI
         completion = client.chat.completions.create(
             model="meta-llama/llama-3.2-3b-instruct:free",
             messages=[
@@ -81,8 +74,8 @@ def analyze():
         response_content = completion.choices[0].message.content
         response_json = {
             "response": response_content,
-            "user_id":user_id,
-            "tg_id":tg_id,
+            "user_id": user_id,
+            "tg_id": tg_id,
             "description": descricao
         }
         
