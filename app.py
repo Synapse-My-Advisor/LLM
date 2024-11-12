@@ -4,6 +4,7 @@ from functools import wraps
 from openai import OpenAI
 from dotenv import load_dotenv
 import mysql.connector
+# mysql alquemy
 
 load_dotenv()
 
@@ -66,7 +67,7 @@ def analyze():
         db_connection.close()
     
     except mysql.connector.Error as err:
-        return jsonify({"message": "Falhou com Sucesso"})
+        return jsonify({'Falhou com Sucesso'})
 
     try:
         
